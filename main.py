@@ -243,7 +243,7 @@ def get_topics(db: psycopg2.extensions.connection = Depends(get_db)):
         logger.error("Fehler beim Abrufen der Themen: %s", e)
         raise HTTPException(status_code=500, detail="Interner Serverfehler")
 
-@app.get("/publishers", response_model=PublisherListResponse)
+@app.get("/api/v01/publishers", response_model=PublisherListResponse)
 def get_publishers(
     country: Optional[str] = Query(None, description="ISO-Ländercode zum Filtern"),
     db: psycopg2.extensions.connection = Depends(get_db)
