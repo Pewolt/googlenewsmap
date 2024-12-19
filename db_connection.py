@@ -22,7 +22,7 @@ try:
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
         host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT", "5432"),
+        port=os.getenv("DB_PORT", "5433"),
         database=os.getenv("DB_NAME"),
         options="-c search_path=google_news"
     )
