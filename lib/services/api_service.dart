@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/publisher.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://googlemaptimes.peterwolters.org/api/v01'; // Ersetze durch deine tatsächliche API-URL
+  static const String baseUrl = 'https://maptimes.peterwolters.org/api/v01'; // Ersetze durch deine tatsächliche API-URL
 
   Future<List<Publisher>> fetchPublishers() async {
     final response = await http.get(Uri.parse('$baseUrl/publishers'));
