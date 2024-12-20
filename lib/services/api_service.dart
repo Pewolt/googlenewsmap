@@ -9,13 +9,16 @@ import '../models/topic.dart';
 class ApiService {
   static const String baseUrl = 'https://maptimes.peterwolters.org/api/v01'; // Ersetze durch deine tatsächliche API-URL
 
-  Future<List<Publisher>> fetchPublishers() async {
-    final response = await http.get(Uri.parse('$baseUrl/publishers'));
+  Future<List<Publisher>> fetchPublishers({
+    String? country,
+  }) async {
+    // Baue die URL mit optionalen Parametern
+    final uri = Uri.parse('$baseUrl/publishers${country != null ? "?country=$country" : ""}');
+    final response = await http.get(uri);
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       List<Publisher> publishers = [];
-
       for (var item in data['items']) {
         publishers.add(Publisher.fromJson(item));
       }
@@ -25,19 +28,26 @@ class ApiService {
     }
   }
 
-  Future<List<Article>> fetchNews({int? publisherId}) async {
-    // Wir bauen die URL dynamisch, falls ein Publisher-Filter vorhanden ist.
-    Uri url;
-    if (publisherId != null) {
-      // Die API erwartet laut vorherigen Infos ggf. einen Parameter publishers
-      // als Liste oder einzelnen Wert. Prüfe die Doku deiner API.
-      // Hier ein Beispiel mit einem einzelnen Publisher-Filter:
-      url = Uri.parse('$baseUrl/news?publishers=$publisherId');
-    } else {
-      url = Uri.parse('$baseUrl/news');
-    }
+  Future<List<Article>> fetchNews({
+    int? publisherId,
+    String? keywords,
+    List<int>? topics,
+    String? country,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+  }) async {
+    // Erstelle Query-Parameter dynamisch
+    final queryParams = <String, String>{};
 
-    final response = await http.get(url);
+    if (publisherId != null) queryParams['publishers'] = publisherId.toString();
+    if (keywords != null && keywords.isNotEmpty) queryParams['keywords'] = keywords;
+    if (topics != null && topics.isNotEmpty) queryParams['topics'] = topics.join(',');
+    if (country != null && country.isNotEmpty) queryParams['country'] = country;
+    if (dateFrom != null) queryParams['date_from'] = dateFrom.toIso8601String();
+    if (dateTo != null) queryParams['date_to'] = dateTo.toIso8601String();
+
+    final uri = Uri.parse('$baseUrl/news').replace(queryParameters: queryParams);
+    final response = await http.get(uri);
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -48,6 +58,33 @@ class ApiService {
       return articles;
     } else {
       throw Exception('Failed to load news');
+    }
+  }
+
+  Future<List<Topic>> fetchTopics() async {
+    final response = await http.get(Uri.parse('$baseUrl/topics'));
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      List<Topic> topics = [];
+      for (var item in data['items']) {
+        topics.add(Topic.fromJson(item));
+      }
+      return topics;
+    } else {
+      throw Exception('Failed to load topics');
+    }
+  }
+
+  Future<List<String>> fetchAutocompleteSuggestions(String query) async {
+    final uri = Uri.parse('$baseUrl/search/autocomplete?q=$query');
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      List<dynamic> suggestions = data['suggestions'];
+      return suggestions.map((s) => s.toString()).toList();
+    } else {
+      throw Exception('Failed to load autocomplete suggestions');
     }
   }
 }

@@ -44,5 +44,6 @@ app.*.map.json
 /android/app/release
 
 # Python
-/assetds/.env
+/assets/.env
+*.env
 >>>>>>> 83434d0 (adding flutter-project)
