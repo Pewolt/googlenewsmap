@@ -1,14 +1,13 @@
-// lib/screens/home_screen.dart
-
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 import '../models/publisher.dart';
+import '../models/article.dart';
 import '../services/api_service.dart';
+import '../models/topic.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -24,8 +23,12 @@ class _HomeScreenState extends State<HomeScreen> {
   final PanelController _panelController = PanelController();
 
   List<Publisher> _publishers = [];
+  List<Article> _articles = [];
   late MapController _mapController;
-  bool _isLoading = true;
+  bool _isLoadingPublishers = true;
+  bool _isLoadingArticles = false;
+
+  Publisher? _selectedPublisher;
 
   @override
   void initState() {
@@ -40,21 +43,37 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       ApiService apiService = ApiService();
       List<Publisher> publishers = await apiService.fetchPublishers();
-      print("done");
       setState(() {
         _publishers = publishers;
-        print('Publisher geladen: ${_publishers.length}');
-        _isLoading = false;
+        _isLoadingPublishers = false;
       });
     } catch (e) {
       print('Fehler beim Laden der Publisher: $e');
       setState(() {
-        _isLoading = false;
+        _isLoadingPublishers = false;
       });
     }
   }
 
-  Publisher? _selectedPublisher;
+  Future<void> _fetchNewsForPublisher(int publisherId) async {
+    setState(() {
+      _isLoadingArticles = true;
+      _articles = [];
+    });
+    try {
+      ApiService apiService = ApiService();
+      List<Article> articles = await apiService.fetchNews(publisherId: publisherId);
+      setState(() {
+        _articles = articles;
+        _isLoadingArticles = false;
+      });
+    } catch (e) {
+      print('Fehler beim Laden der Nachrichten: $e');
+      setState(() {
+        _isLoadingArticles = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,51 +94,55 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMap() {
     return FlutterMap(
       mapController: _mapController,
-      options: MapOptions(
+      options: const MapOptions(
         initialCenter: LatLng(0, 0),
-        initialZoom: 2.0,
+        initialZoom: 4.0,
+        interactionOptions: const InteractionOptions(
+          flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+        ),
       ),
       children: [
         TileLayer(
-          urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          urlTemplate:
+              "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         ),
-        if (!_isLoading) 
-          MarkerLayer(
-            markers: _publishers.map((publisher) {
-              return Marker(
-                point: LatLng(
-                  publisher.location.latitude,
-                  publisher.location.longitude,
+        if (!_isLoadingPublishers) MarkerLayer(
+          markers: _publishers.map((publisher) {
+            return Marker(
+              point: LatLng(
+                publisher.location.latitude,
+                publisher.location.longitude,
+              ),
+              width: 40,
+              height: 40,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedPublisher = publisher;
+                  });
+                  _mapController.move(
+                    LatLng(
+                      publisher.location.latitude,
+                      publisher.location.longitude,
+                    ),
+                    9.0,
+                  );
+                  // Nachrichten für den ausgewählten Publisher laden
+                  _fetchNewsForPublisher(publisher.id);
+                  // Panel öffnen
+                  _panelController.open();
+                },
+                child: Icon(
+                  Icons.location_on,
+                  color: _selectedPublisher == publisher
+                      ? Colors.red
+                      : Colors.blue,
+                  size: 40,
                 ),
-                width: 40,
-                height: 40,
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedPublisher = publisher;
-                    });
-                    // Karte zum Marker zentrieren
-                    _mapController.move(
-                      LatLng(
-                        publisher.location.latitude,
-                        publisher.location.longitude,
-                      ),
-                      8.0, // Zoomstufe
-                    );
-                    // Panel öffnen
-                    _panelController.open();
-                  },
-                  child: Icon(
-                    Icons.location_on,
-                    color: _selectedPublisher == publisher
-                        ? Colors.red
-                        : Colors.blue,
-                    size: 40,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
+              ),
+            );
+          }).toList(),
+        ),
       ],
     );
   }
@@ -144,38 +167,42 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _panel(ScrollController sc) {
-    return _selectedPublisher == null
-        ? Center(child: Text('Bitte einen Publisher auswählen'))
-        : MediaQuery.removePadding(
-            context: context,
-            removeTop: true,
-            child: ListView(
-              controller: sc,
-              children: <Widget>[
-                SizedBox(height: 12.0),
-                Center(
-                  child: Container(
-                    width: 30,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius:
-                          BorderRadius.all(Radius.circular(12.0)),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 18.0),
-                ListTile(
-                  leading: Icon(Icons.business),
-                  title: Text(_selectedPublisher!.name),
-                  subtitle: Text(
-                    '${_selectedPublisher!.location.city ?? ''}, ${_selectedPublisher!.location.country ?? ''}',
-                  ),
-                ),
-                // Weitere Informationen hinzufügen
-              ],
+    if (_selectedPublisher == null) {
+      return Center(child: Text('Bitte einen Publisher auswählen'));
+    }
+
+    if (_isLoadingArticles) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (_articles.isEmpty) {
+      return Center(child: Text('Keine Nachrichten verfügbar'));
+    }
+
+    return MediaQuery.removePadding(
+      context: context,
+      removeTop: true,
+      child: ListView.builder(
+        controller: sc,
+        itemCount: _articles.length,
+        itemBuilder: (context, index) {
+          final article = _articles[index];
+          return ListTile(
+            leading: Icon(Icons.article),
+            title: Text(article.title),
+            subtitle: Text(
+              '${article.formattedDate}\n${article.publisher?.name ?? ''}',
             ),
+            isThreeLine: true,
+            onTap: () {
+              // Artikel-Interaktion: Öffne Link im Browser oder zeige Detailseite
+              // Beispiel (Link im Browser öffnen):
+              // _openArticleLink(article.link);
+            },
           );
+        },
+      ),
+    );
   }
 
   Widget _buildSearchBar() {
