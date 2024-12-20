@@ -75911,7 +75911,7 @@ A.Uq.prototype={
 wW(){var s=0,r=A.P(t.jM),q,p,o,n,m,l,k,j
 var $async$wW=A.Q(function(a,b){if(a===1)return A.M(b,r)
 while(true)switch(s){case 0:s=3
-return A.S(A.aIg(A.fD("http://googlemaptimes.peterwolters.org/api/v01/publishers")),$async$wW)
+return A.S(A.aIg(A.fD("https://maptimes.peterwolters.org/api/v01/publishers")),$async$wW)
 case 3:j=b
 if(j.b===200){p=B.dt.Qd(A.aI1(A.aG_(j.e).c.a.h(0,"charset")).fA(j.w),null)
 o=A.b([],t.X1)
