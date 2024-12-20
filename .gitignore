@@ -47,3 +47,12 @@ app.*.map.json
 /assets/.env
 *.env
 >>>>>>> 83434d0 (adding flutter-project)
+
+
+ios/
+linux/
+android/
+macos/
+test/
+web/
+windows/
