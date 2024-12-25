@@ -8,7 +8,7 @@ part of 'topic.dart';
 
 Topic _$TopicFromJson(Map<String, dynamic> json) => Topic(
       id: (json['id'] as num).toInt(),
-      topicName: json['topicName'] as String,
+      topicName: json['topic_name'] as String,
     );
 
 Map<String, dynamic> _$TopicToJson(Topic instance) => <String, dynamic>{

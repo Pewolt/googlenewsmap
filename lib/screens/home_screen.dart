@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -11,7 +10,10 @@ import '../models/topic.dart';
 import '../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _HomeScreenState createState() => _HomeScreenState();
 }
 
@@ -20,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final double _initFabHeight = 120.0;
   double _fabHeight = 0;
   double _panelHeightOpen = 0;
-  double _panelHeightClosed = 95.0;
+  final double _panelHeightClosed = 95.0;
   final PanelController _panelController = PanelController();
 
   // Map
@@ -42,13 +44,16 @@ class _HomeScreenState extends State<HomeScreen> {
   // Filter
   String? _searchQuery;
   String? _selectedCountry;
+  // ignore: prefer_final_fields
   List<int> _selectedTopics = [];
   DateTime? _dateFrom;
   DateTime? _dateTo;
 
   // Autocomplete
   List<String> _suggestions = [];
+  // ignore: prefer_final_fields
   TextEditingController _searchController = TextEditingController();
+  // ignore: prefer_final_fields
   FocusNode _searchFocus = FocusNode();
   bool _showFilters = false;
 
