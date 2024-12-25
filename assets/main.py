@@ -401,9 +401,9 @@ def search_news(
                 query += " AND articles.pub_date <= %s"
                 params.append(date_to)
 
-            # Sortieren, aber noch KEIN Offset/LIMIT anwenden,
-            # weil wir erst Publisher-Artikel-Gruppen bilden wollen.
-            query += " ORDER BY articles.pub_date DESC"
+            # Hinzufügen von Sortierung, Paginierung
+            query += " ORDER BY articles.pub_date DESC OFFSET %s LIMIT %s"
+            params.extend([(page - 1) * page_size, page_size])
 
             # 2) Hole alle passenden Datensätze
             cursor.execute(query, params)

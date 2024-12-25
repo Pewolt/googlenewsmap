@@ -70,9 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
       } else {
         // Falls du die Filter wieder ausblenden möchtest, wenn
         // das Textfeld den Fokus verliert:
-        setState(() {
-          _showFilters = false;
-        });
+        
       }
     });
 
@@ -161,6 +159,9 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Anwenden der Filter (z. B. wenn auf den Check-Button in der Suchleiste geklickt wird)
   void _applyFiltersAndSearch() {
     _searchQuery = _searchController.text.isNotEmpty ? _searchController.text : null;
+    setState(() {
+          _showFilters = false;
+        });
     FocusScope.of(context).unfocus(); // Tastatur schließen
     _searchPublishersWithArticles();
   }
@@ -228,10 +229,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return FlutterMap(
       mapController: _mapController,
-      options: MapOptions(
+      options: const MapOptions(
         initialCenter: LatLng(0, 0),
         initialZoom: 3.0,
-        interactionOptions: const InteractionOptions(
+        interactionOptions: InteractionOptions(
           flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
         ),
       ),
@@ -251,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
       minHeight: _panelHeightClosed,
       parallaxEnabled: true,
       parallaxOffset: 0.5,
-      borderRadius: BorderRadius.only(
+      borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(18.0),
         topRight: Radius.circular(18.0),
       ),
@@ -265,12 +266,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _panel(ScrollController sc) {
     if (_selectedPublisherWithArticles == null &&
         (_searchQuery == null || _searchQuery!.isEmpty)) {
-      return Center(child: Text('Bitte einen Publisher auswählen oder Filter setzen'));
+      return const Center(child: Text('Bitte einen Publisher auswählen oder Filter setzen'));
     }
 
     final articles = _selectedPublisherWithArticles?.articles ?? [];
     if (articles.isEmpty) {
-      return Center(child: Text('Keine Nachrichten verfügbar'));
+      return const Center(child: Text('Keine Nachrichten verfügbar'));
     }
 
     return MediaQuery.removePadding(
@@ -282,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
         itemBuilder: (context, index) {
           final article = articles[index];
           return ListTile(
-            leading: Icon(Icons.article),
+            leading: const Icon(Icons.article),
             title: Text(article.title),
             subtitle: Text(
               '${article.formattedDate}\n'
@@ -290,9 +291,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             isThreeLine: true,
             onTap: () {
-              if (article.link != null) {
-                _openArticleLink(article.link!);
-              }
+                _openArticleLink(article.link);
+
             },
           );
         },
@@ -309,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black26,
               blurRadius: 5.0,
@@ -322,11 +322,11 @@ class _HomeScreenState extends State<HomeScreen> {
           focusNode: _searchFocus,
           decoration: InputDecoration(
             hintText: 'Suche',
-            prefixIcon: Icon(Icons.search),
+            prefixIcon: const Icon(Icons.search),
             border: InputBorder.none,
-            contentPadding: EdgeInsets.all(16),
+            contentPadding: const EdgeInsets.all(16),
             suffixIcon: IconButton(
-              icon: Icon(Icons.check),
+              icon: const Icon(Icons.check),
               onPressed: _applyFiltersAndSearch,
               tooltip: 'Filter anwenden und suchen',
             ),
@@ -381,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
               // Themenauswahl (einfach als Checkboxes)
               if (!_isLoadingTopics)
                 ExpansionTile(
-                  title: Text('Themen auswählen'),
+                  title: const Text('Themen auswählen'),
                   children: _topics.map((t) {
                     final selected = _selectedTopics.contains(t.id);
                     return CheckboxListTile(
@@ -402,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Land-Filter
               TextField(
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Ländercode (z. B. DE, US)',
                 ),
                 onChanged: (val) {
@@ -433,7 +433,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           : 'Von: ${_dateFrom!.toLocal()}'.split(' ')[0]),
                     ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
@@ -441,7 +441,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           context: context,
                           initialDate: DateTime.now(),
                           firstDate: DateTime(2000),
-                          lastDate: DateTime.now().add(Duration(days: 365)),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
                         );
                         if (picked != null) {
                           setState(() {
@@ -456,10 +456,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: _applyFiltersAndSearch,
-                child: Text('Filter anwenden'),
+                child: const Text('Filter anwenden'),
               ),
             ],
           ),
