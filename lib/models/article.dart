@@ -1,10 +1,13 @@
 // lib/models/article.dart
 
+import 'package:json_annotation/json_annotation.dart';
 import 'package:intl/intl.dart';
-
 import 'publisher.dart';
 import 'topic.dart';
 
+part 'article.g.dart';
+
+@JsonSerializable()
 class Article {
   final int id;
   final String title;
@@ -22,21 +25,11 @@ class Article {
     this.topic,
   });
 
-  factory Article.fromJson(Map<String, dynamic> json) {
-    DateTime? parsedDate;
-    if (json['pub_date'] != null) {
-      parsedDate = DateTime.tryParse(json['pub_date']);
-    }
+  /// json_serializable generiert diese Methode
+  factory Article.fromJson(Map<String, dynamic> json) =>
+      _$ArticleFromJson(json);
 
-    return Article(
-      id: json['id'],
-      title: json['title'],
-      link: json['link'],
-      pubDate: parsedDate,
-      publisher: json['publisher'] != null ? Publisher.fromJson(json['publisher']) : null,
-      topic: json['topic'] != null ? Topic.fromJson(json['topic']) : null,
-    );
-  }
+  Map<String, dynamic> toJson() => _$ArticleToJson(this);
 
   String get formattedDate {
     if (pubDate == null) return '';

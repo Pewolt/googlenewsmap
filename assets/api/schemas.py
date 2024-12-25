@@ -70,3 +70,14 @@ class PublisherListResponse(BaseModel):
 
 class AutocompleteResponse(BaseModel):
     suggestions: List[str]
+
+class PublisherWithArticles(BaseModel):
+    publisher: PublisherBase
+    articles: List[ArticleBase]
+
+class PublishersArticlesListResponse(BaseModel):
+    total_publishers: int
+    total_articles: int
+    page: int
+    page_size: int
+    items: List[PublisherWithArticles]

@@ -5,8 +5,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../models/publisher.dart';
-import '../models/article.dart';
+import '../models/publisher_with_articles.dart';
+import '../models/publishers_articles_list_response.dart';
 import '../models/topic.dart';
 import '../services/api_service.dart';
 
@@ -16,24 +16,28 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // Panel
   final double _initFabHeight = 120.0;
   double _fabHeight = 0;
   double _panelHeightOpen = 0;
   double _panelHeightClosed = 95.0;
   final PanelController _panelController = PanelController();
 
+  // Map
   late MapController _mapController;
 
-  List<Publisher> _publishers = [];
-  List<Article> _articles = [];
-  List<Topic> _topics = [];
-  List<String> _suggestions = [];
+  // Daten aus dem Search-Endpunkt
+  List<PublisherWithArticles> _publisherArticleGroups = [];
 
-  bool _isLoadingPublishers = true;
-  bool _isLoadingArticles = false;
+  // Topics (falls du sie für die Filter brauchst)
+  List<Topic> _topics = [];
+
+  // UI / Loading Flags
+  bool _isLoading = false;
   bool _isLoadingTopics = false;
 
-  Publisher? _selectedPublisher;
+  // Ausgewählter Publisher inkl. Artikel
+  PublisherWithArticles? _selectedPublisherWithArticles;
 
   // Filter
   String? _searchQuery;
@@ -42,17 +46,20 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime? _dateFrom;
   DateTime? _dateTo;
 
-  // UI für Autocomplete
+  // Autocomplete
+  List<String> _suggestions = [];
   TextEditingController _searchController = TextEditingController();
   FocusNode _searchFocus = FocusNode();
-  bool _showFilters = false; // Zeigt an, ob Filter unter der Suchleiste angezeigt werden sollen.
+  bool _showFilters = false;
 
   @override
   void initState() {
     super.initState();
     _fabHeight = _initFabHeight;
     _mapController = MapController();
-    _fetchPublishersAndTopics();
+
+    // Falls du Topics o. Ä. initial laden willst:
+    _fetchTopics();
 
     // Listener für Fokus auf Suchfeld
     _searchFocus.addListener(() {
@@ -61,8 +68,11 @@ class _HomeScreenState extends State<HomeScreen> {
           _showFilters = true; // Filter anzeigen, wenn Suchfeld fokussiert
         });
       } else {
-        // Wenn das Suchfeld den Fokus verliert, könnte man die Filter wieder ausblenden
-        // setState(() { _showFilters = false; });
+        // Falls du die Filter wieder ausblenden möchtest, wenn
+        // das Textfeld den Fokus verliert:
+        setState(() {
+          _showFilters = false;
+        });
       }
     });
 
@@ -77,34 +87,30 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     });
+
+    // Optional: Erste Suche ausführen, damit man direkt etwas sieht
+    _searchPublishersWithArticles();
   }
 
-  Future<void> _fetchPublishersAndTopics() async {
+  /// Lädt Topics für die Filter
+  Future<void> _fetchTopics() async {
+    setState(() => _isLoadingTopics = true);
     try {
-      ApiService apiService = ApiService();
-      _isLoadingPublishers = true;
-      _isLoadingTopics = true;
-
-      final publishers = await apiService.fetchPublishers(country: _selectedCountry);
-      final topics = await apiService.fetchTopics();
-
+      final apiService = ApiService();
+      final fetchedTopics = await apiService.fetchTopics();
       setState(() {
-        _publishers = publishers;
-        _topics = topics;
-        _isLoadingPublishers = false;
+        _topics = fetchedTopics;
         _isLoadingTopics = false;
       });
     } catch (e) {
-      print('Fehler beim Laden der Basisdaten: $e');
-      setState(() {
-        _isLoadingPublishers = false;
-        _isLoadingTopics = false;
-      });
+      print('Fehler beim Laden der Topics: $e');
+      setState(() => _isLoadingTopics = false);
     }
   }
 
+  /// Lädt Autocomplete-Vorschläge
   Future<void> _fetchAutocomplete(String query) async {
-    ApiService apiService = ApiService();
+    final apiService = ApiService();
     try {
       final suggestions = await apiService.fetchAutocompleteSuggestions(query);
       setState(() {
@@ -115,43 +121,34 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _fetchNewsAndPublishers() async {
-    setState(() {
-      _isLoadingPublishers = true;
-      _isLoadingArticles = true;
-    });
-
-    ApiService apiService = ApiService();
+  /// Fragt den /api/v01/search-Endpunkt ab und speichert die Ergebnisse
+  Future<void> _searchPublishersWithArticles() async {
+    setState(() => _isLoading = true);
 
     try {
-      // Publisher neu laden mit Filtern (z. B. country)
-      final publishers = await apiService.fetchPublishers(country: _selectedCountry);
-
-      // Wenn ein Publisher ausgewählt ist, zeige dessen News; ansonsten alle News entsprechend Filter
-      final articles = await apiService.fetchNews(
-        publisherId: _selectedPublisher?.id,
+      final apiService = ApiService();
+      final response = await apiService.searchPublishersWithArticles(
         keywords: _searchQuery,
-        topics: _selectedTopics.isNotEmpty ? _selectedTopics : null,
         country: _selectedCountry,
+        topics: _selectedTopics.isNotEmpty ? _selectedTopics : null,
         dateFrom: _dateFrom,
         dateTo: _dateTo,
+        page: 1,
+        pageSize: 200,
       );
 
+      // Wir erhalten PublishersArticlesListResponse
       setState(() {
-        _publishers = publishers;
-        _articles = articles;
-        _isLoadingPublishers = false;
-        _isLoadingArticles = false;
+        _publisherArticleGroups = response.items; 
+        _isLoading = false;
       });
     } catch (e) {
-      print('Fehler beim Laden von News oder Publishers: $e');
-      setState(() {
-        _isLoadingPublishers = false;
-        _isLoadingArticles = false;
-      });
+      print('Fehler beim Laden von Publishers & Articles: $e');
+      setState(() => _isLoading = false);
     }
   }
 
+  /// Methode zum Öffnen eines Artikel-Links im Browser
   Future<void> _openArticleLink(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
@@ -161,12 +158,28 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Anwenden der Filter (z. B. wenn auf den Check-Button in der Suchleiste geklickt wird)
   void _applyFiltersAndSearch() {
-    // Filter anwenden
     _searchQuery = _searchController.text.isNotEmpty ? _searchController.text : null;
-    // Nach Anwenden der Filter neu laden
-    _fetchNewsAndPublishers();
     FocusScope.of(context).unfocus(); // Tastatur schließen
+    _searchPublishersWithArticles();
+  }
+
+  /// Wird aufgerufen, wenn ein Publisher auf der Karte getappt wird
+  void _selectPublisher(PublisherWithArticles pwa) {
+    setState(() {
+      _selectedPublisherWithArticles = pwa;
+    });
+    // Karte zentrieren
+    _mapController.move(
+      LatLng(
+        pwa.publisher.location.latitude ?? 0.0,
+        pwa.publisher.location.longitude ?? 0.0,
+      ),
+      8.0,
+    );
+    // Panel öffnen
+    _panelController.open();
   }
 
   @override
@@ -182,12 +195,37 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildSearchBar(),
           if (_searchFocus.hasFocus && _suggestions.isNotEmpty) _buildSuggestionsList(),
           if (_showFilters) _buildFilterOptions(),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator()),
         ],
       ),
     );
   }
 
   Widget _buildMap() {
+    // Baue Marker nur für die gelisteten Publisher (aus _publisherArticleGroups)
+    final markers = _publisherArticleGroups.map((pwa) {
+      final pub = pwa.publisher;
+      return Marker(
+        point: LatLng(
+          pub.location.latitude ?? 0.0,
+          pub.location.longitude ?? 0.0,
+        ),
+        width: 40,
+        height: 40,
+        child: GestureDetector(
+          onTap: () => _selectPublisher(pwa),
+          child: Icon(
+            Icons.location_on,
+            color: _selectedPublisherWithArticles?.publisher.id == pub.id
+                ? Colors.red
+                : Colors.blue,
+            size: 40,
+          ),
+        ),
+      );
+    }).toList();
+
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
@@ -201,41 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
         TileLayer(
           urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         ),
-        if (!_isLoadingPublishers) MarkerLayer(
-          markers: _publishers.map((publisher) {
-            return Marker(
-              point: LatLng(
-                publisher.location.latitude,
-                publisher.location.longitude,
-              ),
-              width: 40,
-              height: 40,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedPublisher = publisher;
-                  });
-                  _mapController.move(
-                    LatLng(
-                      publisher.location.latitude,
-                      publisher.location.longitude,
-                    ),
-                    8.0,
-                  );
-                  _fetchNewsAndPublishers();
-                  _panelController.open();
-                },
-                child: Icon(
-                  Icons.location_on,
-                  color: _selectedPublisher == publisher
-                      ? Colors.red
-                      : Colors.blue,
-                  size: 40,
-                ),
-              ),
-            );
-          }).toList(),
-        ),
+        MarkerLayer(markers: markers),
       ],
     );
   }
@@ -253,22 +257,19 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       panelBuilder: (ScrollController sc) => _panel(sc),
       onPanelSlide: (double pos) => setState(() {
-        _fabHeight = pos * (_panelHeightOpen - _panelHeightClosed) +
-            _initFabHeight;
+        _fabHeight = pos * (_panelHeightOpen - _panelHeightClosed) + _initFabHeight;
       }),
     );
   }
 
   Widget _panel(ScrollController sc) {
-    if (_selectedPublisher == null && (_searchQuery == null || _searchQuery!.isEmpty)) {
+    if (_selectedPublisherWithArticles == null &&
+        (_searchQuery == null || _searchQuery!.isEmpty)) {
       return Center(child: Text('Bitte einen Publisher auswählen oder Filter setzen'));
     }
 
-    if (_isLoadingArticles) {
-      return Center(child: CircularProgressIndicator());
-    }
-
-    if (_articles.isEmpty) {
+    final articles = _selectedPublisherWithArticles?.articles ?? [];
+    if (articles.isEmpty) {
       return Center(child: Text('Keine Nachrichten verfügbar'));
     }
 
@@ -277,18 +278,21 @@ class _HomeScreenState extends State<HomeScreen> {
       removeTop: true,
       child: ListView.builder(
         controller: sc,
-        itemCount: _articles.length,
+        itemCount: articles.length,
         itemBuilder: (context, index) {
-          final article = _articles[index];
+          final article = articles[index];
           return ListTile(
             leading: Icon(Icons.article),
             title: Text(article.title),
             subtitle: Text(
-              '${article.formattedDate}\n${article.publisher?.name ?? ''}',
+              '${article.formattedDate}\n'
+              '${article.publisher?.name ?? ''}',
             ),
             isThreeLine: true,
             onTap: () {
-              _openArticleLink(article.link);
+              if (article.link != null) {
+                _openArticleLink(article.link!);
+              }
             },
           );
         },
@@ -333,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSuggestionsList() {
-    final topPosition = MediaQuery.of(context).padding.top + 70; // etwas unter der Suche
+    final topPosition = MediaQuery.of(context).padding.top + 70;
 
     return Positioned(
       top: topPosition,
@@ -349,7 +353,6 @@ class _HomeScreenState extends State<HomeScreen> {
             return ListTile(
               title: Text(suggestion),
               onTap: () {
-                // Vorschlag übernehmen
                 _searchController.text = suggestion;
                 _searchFocus.unfocus();
                 _applyFiltersAndSearch();
@@ -362,8 +365,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFilterOptions() {
-    // Ein einfaches Beispiel für Filter: Themen-Dropdown, Land-Textfeld, Zeitraum-Picker
-    final topPosition = MediaQuery.of(context).padding.top + 70 + (_suggestions.isNotEmpty ? 200 : 0);
+    final topPosition = MediaQuery.of(context).padding.top + 70 +
+        (_suggestions.isNotEmpty ? 200 : 0);
 
     return Positioned(
       top: topPosition,
@@ -397,7 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   }).toList(),
                 ),
 
-              // Land-Filter (einfach ein TextField für ISO Code)
+              // Land-Filter
               TextField(
                 decoration: InputDecoration(
                   labelText: 'Ländercode (z. B. DE, US)',
@@ -425,7 +428,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           });
                         }
                       },
-                      child: Text(_dateFrom == null ? 'Von Datum' : 'Von: ${_dateFrom!.toLocal()}'.split(' ')[0]),
+                      child: Text(_dateFrom == null
+                          ? 'Von Datum'
+                          : 'Von: ${_dateFrom!.toLocal()}'.split(' ')[0]),
                     ),
                   ),
                   SizedBox(width: 8),
@@ -444,12 +449,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           });
                         }
                       },
-                      child: Text(_dateTo == null ? 'Bis Datum' : 'Bis: ${_dateTo!.toLocal()}'.split(' ')[0]),
+                      child: Text(_dateTo == null
+                          ? 'Bis Datum'
+                          : 'Bis: ${_dateTo!.toLocal()}'.split(' ')[0]),
                     ),
                   ),
                 ],
               ),
-
               SizedBox(height: 8),
               ElevatedButton(
                 onPressed: _applyFiltersAndSearch,

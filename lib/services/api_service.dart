@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/article.dart';
 import '../models/publisher.dart';
 import '../models/topic.dart';
+import '../models/publishers_articles_list_response.dart';
 
 class ApiService {
   static const String baseUrl = 'https://maptimes.peterwolters.org/api/v01'; // Ersetze durch deine tatsächliche API-URL
@@ -85,6 +86,53 @@ class ApiService {
       return suggestions.map((s) => s.toString()).toList();
     } else {
       throw Exception('Failed to load autocomplete suggestions');
+    }
+  }
+
+  Future<PublishersArticlesListResponse> searchPublishersWithArticles({
+    String? keywords,
+    List<int>? topics,
+    List<int>? publisherIds,
+    String? country,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    int page = 1,
+    int pageSize = 200,
+  }) async {
+    final queryParams = <String, String>{
+      'page': page.toString(),
+      'page_size': pageSize.toString(),
+    };
+
+    if (keywords != null && keywords.isNotEmpty) {
+      queryParams['keywords'] = keywords;
+    }
+    if (topics != null && topics.isNotEmpty) {
+      // FastAPI akzeptiert Wiederholungen: topics=1&topics=2 oder ANY(...)?
+      // Hier nehmen wir an, du kannst Komma-separierte IDs senden:
+      queryParams['topics'] = topics.join(',');
+    }
+    if (publisherIds != null && publisherIds.isNotEmpty) {
+      queryParams['publishers'] = publisherIds.join(',');
+    }
+    if (country != null && country.isNotEmpty) {
+      queryParams['country'] = country;
+    }
+    if (dateFrom != null) {
+      queryParams['date_from'] = dateFrom.toIso8601String();
+    }
+    if (dateTo != null) {
+      queryParams['date_to'] = dateTo.toIso8601String();
+    }
+
+    final uri = Uri.parse('$baseUrl/search').replace(queryParameters: queryParams);
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final jsonMap = jsonDecode(response.body);
+      return PublishersArticlesListResponse.fromJson(jsonMap);
+    } else {
+      throw Exception('Fehler beim Aufrufen von /api/v01/search: ${response.statusCode}');
     }
   }
 }

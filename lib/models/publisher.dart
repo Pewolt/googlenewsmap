@@ -1,5 +1,10 @@
 // lib/models/publisher.dart
 
+import 'package:json_annotation/json_annotation.dart';
+
+part 'publisher.g.dart';
+
+@JsonSerializable()
 class Publisher {
   final int id;
   final String name;
@@ -11,15 +16,15 @@ class Publisher {
     required this.location,
   });
 
-  factory Publisher.fromJson(Map<String, dynamic> json) {
-    return Publisher(
-      id: json['id'],
-      name: json['name'],
-      location: Location.fromJson(json['location']),
-    );
-  }
+  /// Vom Generator erstellte Methode zum Deserialisieren
+  factory Publisher.fromJson(Map<String, dynamic> json) =>
+      _$PublisherFromJson(json);
+
+  /// Zum Serialisieren
+  Map<String, dynamic> toJson() => _$PublisherToJson(this);
 }
 
+@JsonSerializable()
 class Location {
   final double latitude;
   final double longitude;
@@ -33,12 +38,8 @@ class Location {
     this.city,
   });
 
-  factory Location.fromJson(Map<String, dynamic> json) {
-    return Location(
-      latitude: json['latitude'],
-      longitude: json['longitude'],
-      country: json['country'],
-      city: json['city'],
-    );
-  }
+  factory Location.fromJson(Map<String, dynamic> json) =>
+      _$LocationFromJson(json);
+
+  Map<String, dynamic> toJson() => _$LocationToJson(this);
 }

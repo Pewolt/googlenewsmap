@@ -15,6 +15,8 @@ from api.schemas import (
     PublisherListResponse,
     AutocompleteResponse,
     LocationBase,
+    PublisherWithArticles,
+    PublishersArticlesListResponse,
 )
 
 from db_connection import get_connection, return_connection
@@ -325,4 +327,163 @@ def autocomplete_search(q: str = Query(..., min_length=1, description="Eingabewo
             return AutocompleteResponse(suggestions=suggestions)
     except Exception as e:
         logger.error("Fehler beim Autocomplete: %s", e)
+        raise HTTPException(status_code=500, detail="Interner Serverfehler")
+
+@app.get("/api/v01/search", response_model=PublishersArticlesListResponse)
+def search_news(
+    keywords: Optional[str] = Query(None, description="Schlüsselwörter für die Suche"),
+    topics: Optional[List[int]] = Query(None, description="Themen-IDs zum Filtern"),
+    publishers: Optional[List[int]] = Query(None, description="Publisher-IDs zum Filtern"),
+    country: Optional[str] = Query(None, description="ISO-Ländercode zum Filtern"),
+    date_from: Optional[datetime] = Query(None, description="Startdatum des Veröffentlichungszeitraums"),
+    date_to: Optional[datetime] = Query(None, description="Enddatum des Veröffentlichungszeitraums"),
+    page: int = Query(1, ge=1, description="Seitenzahl"),
+    page_size: int = Query(200, ge=1, le=1000, description="Anzahl der Artikel pro Seite"),
+    db: psycopg2.extensions.connection = Depends(get_db)
+):
+    """
+    Sucht nach Artikeln anhand verschiedener Filter und gruppiert sie nach Publisher.
+    Gibt nur jene Publisher zurück, die mind. einen passenden Artikel haben.
+    """
+    logger.debug("GET /search aufgerufen mit Parametern: keywords=%s, topics=%s, publishers=%s, country=%s, date_from=%s, date_to=%s, page=%s, page_size=%s",
+                 keywords, topics, publishers, country, date_from, date_to, page, page_size)
+
+    try:
+        with db.cursor(cursor_factory=RealDictCursor) as cursor:
+            # 1) Gleicher Start wie bei /news, nur ohne finalen COUNT.
+            query = """
+                SELECT 
+                    articles.id AS article_id,
+                    articles.title AS article_title,
+                    articles.link AS article_link,
+                    articles.pub_date AS article_pub_date,
+                    publishers.id AS publisher_id,
+                    publishers.name AS publisher_name,
+                    publishers.latitude,
+                    publishers.longitude,
+                    publishers.country_id,
+                    publishers.city,
+                    countries.country_name,
+                    countries.iso_code,
+                    topics.id AS topic_id,
+                    topics.topic_name AS topic_name
+                FROM articles
+                JOIN publishers ON articles.publisher_id = publishers.id
+                JOIN feeds ON articles.feed_id = feeds.id
+                JOIN topics ON feeds.topic_id = topics.id
+                JOIN countries ON publishers.country_id = countries.id
+                WHERE 1=1
+            """
+            params = []
+
+            if keywords:
+                query += " AND articles.title ILIKE %s"
+                keyword_param = f"%{keywords}%"
+                params.append(keyword_param)
+            
+            if topics:
+                query += " AND articles.topic_id = ANY(%s)"
+                params.append(topics)
+            
+            if publishers:
+                query += " AND articles.publisher_id = ANY(%s)"
+                params.append(publishers)
+            
+            if country:
+                query += " AND countries.iso_code ILIKE %s"
+                params.append(country)
+            
+            if date_from:
+                query += " AND articles.pub_date >= %s"
+                params.append(date_from)
+            
+            if date_to:
+                query += " AND articles.pub_date <= %s"
+                params.append(date_to)
+
+            # Sortieren, aber noch KEIN Offset/LIMIT anwenden,
+            # weil wir erst Publisher-Artikel-Gruppen bilden wollen.
+            query += " ORDER BY articles.pub_date DESC"
+
+            # 2) Hole alle passenden Datensätze
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+            logger.debug("Anzahl der gefundenen Datensätze vor Gruppierung: %s", len(rows))
+
+            # 3) Gruppierung nach Publisher
+            #    Key = publisher_id, Value = { "publisher": PublisherBase, "articles": [ArticleBase...] }
+            grouped = {}
+
+            for row in rows:
+                pub_id = row["publisher_id"]
+                
+                # Publisher-Objekt erzeugen (wird für jeden Artikel identisch sein)
+                location = LocationBase(
+                    latitude=row['latitude'],
+                    longitude=row['longitude'],
+                    country=row['country_name'],
+                    city=row['city']
+                )
+                publisher_obj = PublisherBase(
+                    id=row['publisher_id'],
+                    name=row['publisher_name'],
+                    location=location
+                )
+
+                # Topic-Objekt
+                topic_obj = TopicBase(
+                    id=row['topic_id'],
+                    topic_name=row['topic_name']
+                )
+
+                # Artikel-Objekt
+                article_obj = ArticleBase(
+                    id=row['article_id'],
+                    title=row['article_title'],
+                    link=row['article_link'],
+                    pub_date=row['article_pub_date'],
+                    publisher=publisher_obj,
+                    topic=topic_obj
+                )
+
+                if pub_id not in grouped:
+                    grouped[pub_id] = {
+                        "publisher": publisher_obj,
+                        "articles": []
+                    }
+                
+                grouped[pub_id]["articles"].append(article_obj)
+            
+            # 4) Gesamte Anzahl passender Artikel
+            total_articles = sum(len(g["articles"]) for g in grouped.values())
+            # 5) Sortierung der Publisher-Gruppen kann optional sein, z. B. nach Publisher-Name
+            #    grouped_values = sorted(grouped.values(), key=lambda x: x["publisher"].name)
+            grouped_values = list(grouped.values())
+
+            # 6) Pagination auf Ebene der Publisher
+            #    -> page, page_size anwenden
+            start_idx = (page - 1) * page_size
+            end_idx = start_idx + page_size
+            paginated = grouped_values[start_idx:end_idx]
+
+            # 7) In das gewünschte Schema überführen
+            items = []
+            for entry in paginated:
+                items.append(
+                    PublisherWithArticles(
+                        publisher=entry["publisher"],
+                        articles=entry["articles"]
+                    )
+                )
+
+            return PublishersArticlesListResponse(
+                total_publishers=len(grouped_values),  # Gesamtanzahl Publisher
+                total_articles=total_articles,         # Gesamtanzahl Artikel
+                page=page,
+                page_size=page_size,
+                items=items
+            )
+    except Exception as e:
+        logger.error("Fehler beim /api/v01/search: %s", e)
         raise HTTPException(status_code=500, detail="Interner Serverfehler")
