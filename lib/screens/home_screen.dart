@@ -58,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _fabHeight = _initFabHeight;
     _mapController = MapController();
 
-    // Falls du Topics o. Ä. initial laden willst:
+    _searchPublishersWithArticles();
     _fetchTopics();
 
     // Listener für Fokus auf Suchfeld
@@ -85,9 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     });
-
-    // Optional: Erste Suche ausführen, damit man direkt etwas sieht
-    _searchPublishersWithArticles();
   }
 
   /// Lädt Topics für die Filter
