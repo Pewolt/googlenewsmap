@@ -402,7 +402,7 @@ def search_news(
                 params.append(date_to)
 
             # Hinzufügen von Sortierung, Paginierung
-            query += " ORDER BY articles.pub_date DESC OFFSET %s LIMIT %s"
+            query += " ORDER BY (publisher.latitude IS NULL) ASC, articles.pub_date DESC OFFSET %s LIMIT %s"
             params.extend([(page - 1) * page_size, page_size])
 
             # 2) Hole alle passenden Datensätze
