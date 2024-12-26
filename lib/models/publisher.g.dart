@@ -19,8 +19,8 @@ Map<String, dynamic> _$PublisherToJson(Publisher instance) => <String, dynamic>{
     };
 
 Location _$LocationFromJson(Map<String, dynamic> json) => Location(
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
       country: json['country'] as String,
       city: json['city'] as String?,
     );

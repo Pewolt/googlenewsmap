@@ -133,8 +133,10 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final jsonMap = jsonDecode(response.body);
+      print('SEARCH-RESPONSE-MAP: $jsonMap');
       return PublishersArticlesListResponse.fromJson(jsonMap);
     } else {
+      print('SEARCH-RESPONSE-STATUS: ${response.statusCode}');
       throw Exception('Fehler beim Aufrufen von /api/v01/search: ${response.statusCode}');
     }
   }
