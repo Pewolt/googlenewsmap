@@ -382,7 +382,7 @@ def search_news(
                 params.append(keyword_param)
             
             if topics:
-                query += " AND articles.topic_id = ANY(%s)"
+                query += " AND topics.id = ANY(%s)"
                 params.append(topics)
             
             if publishers:

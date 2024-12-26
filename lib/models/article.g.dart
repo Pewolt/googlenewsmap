@@ -10,9 +10,9 @@ Article _$ArticleFromJson(Map<String, dynamic> json) => Article(
       id: (json['id'] as num).toInt(),
       title: json['title'] as String,
       link: json['link'] as String,
-      pubDate: json['pubDate'] == null
+      pubDate: json['pub_date'] == null
           ? null
-          : DateTime.parse(json['pubDate'] as String),
+          : DateTime.parse(json['pub_date'] as String),
       publisher: json['publisher'] == null
           ? null
           : Publisher.fromJson(json['publisher'] as Map<String, dynamic>),

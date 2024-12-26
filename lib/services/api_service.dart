@@ -116,7 +116,7 @@ class ApiService {
       queryParams['publishers'] = publisherIds.join(',');
     }
     if (country != null && country.isNotEmpty) {
-      queryParams['country'] = country;
+      queryParams['country'] = country.replaceAll(" ", "");
     }
     if (dateFrom != null) {
       queryParams['date_from'] = dateFrom.toIso8601String();
@@ -126,7 +126,10 @@ class ApiService {
     }
 
     final uri = Uri.parse('$baseUrl/search').replace(queryParameters: queryParams);
+    print('SEARCH-URL: $uri');
     final response = await http.get(uri);
+
+    print('SEARCH-RESPONSE: ${response.body}');
 
     if (response.statusCode == 200) {
       final jsonMap = jsonDecode(response.body);

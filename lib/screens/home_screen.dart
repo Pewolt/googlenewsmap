@@ -136,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
         page: 1,
         pageSize: 200,
       );
-
+      print('Ergebnis: ${response.items.length} Publisher gefunden');
       // Wir erhalten PublishersArticlesListResponse
       setState(() {
         _publisherArticleGroups = response.items; 
@@ -179,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
         pwa.publisher.location.latitude ?? 0.0,
         pwa.publisher.location.longitude ?? 0.0,
       ),
-      8.0,
+      10.0,
     );
     // Panel öffnen
     _panelController.open();
