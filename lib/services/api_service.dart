@@ -132,7 +132,7 @@ class ApiService {
     print('SEARCH-RESPONSE: ${response.body}');
 
     if (response.statusCode == 200) {
-      final jsonMap = jsonDecode(response.body);
+      final jsonMap = jsonDecode(utf8.decode(response.bodyBytes));
       print('SEARCH-RESPONSE-MAP: $jsonMap');
       return PublishersArticlesListResponse.fromJson(jsonMap);
     } else {
