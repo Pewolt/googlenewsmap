@@ -5,7 +5,6 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/publisher_with_articles.dart';
-import '../models/publishers_articles_list_response.dart';
 import '../models/topic.dart';
 import '../services/api_service.dart';
 
@@ -136,7 +135,6 @@ class _HomeScreenState extends State<HomeScreen> {
         page: 1,
         pageSize: 200,
       );
-      print('Ergebnis: ${response.items.length} Publisher gefunden');
       // Wir erhalten PublishersArticlesListResponse
       setState(() {
         _publisherArticleGroups = response.items; 
@@ -173,14 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _selectedPublisherWithArticles = pwa;
     });
-    // Karte zentrieren
-    _mapController.move(
-      LatLng(
-        pwa.publisher.location.latitude ?? 0.0,
-        pwa.publisher.location.longitude ?? 0.0,
-      ),
-      10.0,
-    );
+
     // Panel öffnen
     _panelController.open();
   }
@@ -376,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
       right: 16,
       child: Container(
         color: Colors.white,
-        padding: EdgeInsets.all(8),
+        padding: const EdgeInsets.all(8),
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -422,7 +413,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           context: context,
                           initialDate: DateTime.now(),
                           firstDate: DateTime(2000),
-                          lastDate: DateTime.now().add(Duration(days: 365)),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
                         );
                         if (picked != null) {
                           setState(() {

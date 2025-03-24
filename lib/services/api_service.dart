@@ -126,17 +126,13 @@ class ApiService {
     }
 
     final uri = Uri.parse('$baseUrl/search').replace(queryParameters: queryParams);
-    print('SEARCH-URL: $uri');
     final response = await http.get(uri);
 
-    print('SEARCH-RESPONSE: ${response.body}');
 
     if (response.statusCode == 200) {
       final jsonMap = jsonDecode(utf8.decode(response.bodyBytes));
-      print('SEARCH-RESPONSE-MAP: $jsonMap');
       return PublishersArticlesListResponse.fromJson(jsonMap);
     } else {
-      print('SEARCH-RESPONSE-STATUS: ${response.statusCode}');
       throw Exception('Fehler beim Aufrufen von /api/v01/search: ${response.statusCode}');
     }
   }
