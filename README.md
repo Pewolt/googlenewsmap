@@ -96,6 +96,8 @@ GoogleMapTimes/
 ```
 ---
 
+# Verwendung
+
 ## Interaktive Karte und App
 
 ### Karte
@@ -117,13 +119,13 @@ Methoden wie `fetchPublishers`, `fetchNews`, `fetchTopics`, `fetchAutocompleteSu
 
 ---
 
-## Mobile Optimierung & Homescreen-Pinning
+# Mobile Optimierung & Homescreen-Pinning
 Die Webseite ist speziell für mobile Geräte optimiert und bietet ein app-ähnliches Erlebnis:
 
-### iOS
+## iOS
 Öffne die Webseite in Safari, tippe auf das Teilen-Symbol und wähle „Zum Home-Bildschirm hinzufügen“. Dadurch wird ein Icon auf dem Homescreen erstellt, über das die Webseite im Vollbildmodus startet.
 
-### Android
+## Android
 Öffne die Webseite in Chrome, tippe auf die drei Punkte oben rechts und wähle „Zum Startbildschirm hinzufügen“. Auch hier wird ein Shortcut erstellt, der die Webseite im Vollbildmodus öffnet.
 
 > **Hinweis:** In der Browser-Version kann das Zoomen deaktiviert sein, um ein konsistentes App-Erlebnis zu gewährleisten.
