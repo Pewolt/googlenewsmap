@@ -1,6 +1,6 @@
 # GoogleMapTimes
 
-GoogleMapTimes ist ein Open-Source-Projekt, das Nachrichten von Google News aus allen von Google unterstützten Ländern sammelt, verarbeitet und auf einer interaktiven Karte anzeigt. Mit Python-Skripten werden GoogleNews-RSS-Feeds heruntergeladen, geparst und in einer PostgreSQL-Datenbank gespeichert. Publisher werden mittels OpenStreetMap (Nominatim) geokodet, sodass ihre Position präzise auf der Karte dargestellt werden kann. Die mobile App ist in Flutter geschrieben und bietet ein app-ähnliches Nutzererlebnis.
+[GoogleMapTimes](https://maptimes.peterwolters.org/) (die Website sollte am Handy geöffnet werden) ist ein Open-Source-Projekt, das Nachrichten von Google News aus allen von Google unterstützten Ländern sammelt, verarbeitet und auf einer interaktiven Karte anzeigt. Mit Python-Skripten werden GoogleNews-RSS-Feeds heruntergeladen, geparst und in einer PostgreSQL-Datenbank gespeichert. Publisher werden mittels OpenStreetMap (Nominatim) geokodet, sodass ihre Position präzise auf der Karte dargestellt werden kann. Die mobile App ist in Flutter geschrieben und bietet ein app-ähnliches Nutzererlebnis.
 
 ---
 
@@ -11,7 +11,7 @@ GoogleMapTimes ist ein Open-Source-Projekt, das Nachrichten von Google News aus 
 - [Technologie-Stack](#technologie-stack)
 - [Projektstruktur](#projektstruktur)
 - [Verwendung](#verwendung)
-- [Mobile Optimierung & Homescreen-Pinning](#mobile-optimierung--homescreen-pinning)
+- [Mobile Optimierung & Homescreen-Pinning](#mobile-optimierung--homescreen-pinning)       <--- Wichtig!
 
 
 ---
