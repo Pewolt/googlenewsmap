@@ -92,8 +92,8 @@ GoogleMapTimes/
 │   │
 │   └── main.dart                 # Einstiegspunkt der Flutter-App
 │
-└── README.md                     # Diese Datei
-
+└── README.md                     # Diese Datei 
+```
 ---
 
 ## Interaktive Karte und App
@@ -114,6 +114,8 @@ Die REST-API stellt unter anderem folgende Endpunkte bereit:
 ## API-Service in Flutter
 Der `ApiService` in `lib/services/api_service.dart` übernimmt die Kommunikation mit den Backend-Endpoints.  
 Methoden wie `fetchPublishers`, `fetchNews`, `fetchTopics`, `fetchAutocompleteSuggestions` und `searchPublishersWithArticles` bieten eine einfache Schnittstelle zur Datenabfrage.
+
+---
 
 ## Mobile Optimierung & Homescreen-Pinning
 Die Webseite ist speziell für mobile Geräte optimiert und bietet ein app-ähnliches Erlebnis:
