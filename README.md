@@ -1,7 +1,7 @@
 # GoogleMapTimes - App
 
 [GoogleMapTimes](https://maptimes.peterwolters.org/) (die Website sollte am Handy geöffnet werden) -- Work in Progress!
-Erweiterungen:
+
 - **Erweiterungen:**
   - Übersetzung ins Englisch/Deutsch
   - Analyse der Nachrichten ob sie positiv oder negativ sind
